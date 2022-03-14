@@ -1,0 +1,12 @@
+{
+    "task_name": "ddqn",
+    "result_dir": ".\\result\\ddqn",
+    "log_dir": ".\\result\\ddqn\\logs",
+    "model_dir": ".\\result\\ddqn\\models",
+
+    "steps": 1000000,
+    "memory_size": 5000,
+    "batch_size": 128,
+    "target_update": 50,
+    "epsilon_decay": 1e-3
+}
