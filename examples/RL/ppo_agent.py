@@ -12,6 +12,7 @@ from torch.nn.utils import clip_grad_norm
 from torch.distributions import Categorical
 from utils import seed_all
 
+SPEED_PARAM = 0.3
 
 class PPOAgent:
     def __init__(self, env, lr_actor, lr_critic,
@@ -44,7 +45,7 @@ class PPOAgent:
         self.actor_old.load_state_dict(self.actor.state_dict())
 
 
-    def train(self, episode_num, update_interval, render_interval, save_interval, eval_episode=10, initial_ep=None):
+    def train(self, episode_num, update_interval, render_interval, save_interval, eval_episodes=10, initial_ep=None):
         total_timestep = 0 if initial_ep == None else initial_ep
         scores = []
         actor_losses, critic_losses = [], []
@@ -61,6 +62,7 @@ class PPOAgent:
                     m = Categorical(prob)
                     action = m.sample().item()
                     state_next, reward, done, info = self.env.step(action)
+                    reward *= (1 + SPEED_PARAM * self.env.speed)
                     self.env.render()
                     self.put_data(*(state, action, reward / 100, state_next, prob[0][action].item(), done))
                     state = state_next
@@ -68,11 +70,11 @@ class PPOAgent:
                     if total_timestep % render_interval == 0:
                         print("# of episode :{}, last 10 ep avg score : {:.1f}".format(i_epi, np.mean(scores[-10:])))
                         self._plot(total_timestep, scores, actor_losses, critic_losses)
-                        cur_score = self.eval(reload_model=False, render=True, episode_num=eval_episode)
-                        print(f'test for {eval_episode} episodes, mean score{cur_score}')
+                        cur_score = self.eval(reload_model=False, render=True, episode_num=eval_episodes)
+                        print(f'test for {eval_episodes} episodes, mean score{cur_score}')
                     if total_timestep % save_interval == 0:
                         self.save(f'step_{total_timestep}')
-                        cur_score = self.eval(reload_model=False, render=False, episode_num=eval_episode)
+                        cur_score = self.eval(reload_model=False, render=False, episode_num=eval_episodes)
                         if cur_score >= best_score or cur_score > 10:
                             self.save(f'bestmodel_step{total_timestep}')
                             best_score = cur_score
@@ -84,6 +86,7 @@ class PPOAgent:
                 critic_losses.append(critic_loss)
 
     def eval(self, reload_model=False, render=False, model=None, episode_num=5):
+        #print("Evaluating")
         if reload_model:
             self.load(model)
         scores = []
@@ -98,29 +101,13 @@ class PPOAgent:
                     prob = self.actor_old(torch.tensor([state], dtype=torch.float)).to(self.device)
                     action = torch.argmax(prob).item()
                     state_next, reward, done, info = self.env.step(action)
+                    reward *= (1 + SPEED_PARAM * self.env.speed)
                     score += reward
                     state = state_next
-        scores.append(score)
-        self.env.close()
-        return np.mean(scores)
-
-    def test(self, render_times=5, render=False):
-        print('Testing model')
-        self.is_test = True
-        scores = []
-        for i in range(render_times):
-            obs = self.env.reset()
-            done = False
-            score = 0
-            while not done:
-                action = self.select_action(obs)
-                obs, reward, done, _ = self.env.step(action)
-                score += reward
-                if render:
-                    self.env.render()
             scores.append(score)
-        print('Done testing, scores are', np.round(np.array(scores), 4))
         self.env.close()
+        #print("Finished evaluating")
+        return np.mean(scores)
 
     def update(self):
         state, action, reward, state_next, prob_action, done_mask = self.buffer.get_batch()

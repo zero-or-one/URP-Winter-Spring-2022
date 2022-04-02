@@ -1,0 +1,12 @@
+{
+    "task_name": "ppo",
+    "result_dir": ".\\result\\ppo",
+    "log_dir": ".\\result\\ppo\\logs",
+    "model_dir": ".\\result\\ppo\\models",
+
+    "lr_actor": 0.001,
+    "lr_critic": 0.001,
+    "gamma": 0.99,
+    "K_epoch": 3,
+    "eps_clip": 0.2
+}

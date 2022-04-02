@@ -14,14 +14,22 @@ class F110Env_Discrete:
         self.f110 = F110Env(map=conf.map_path, map_ext=conf.map_ext, num_agents=1)
         self.conf = conf
         self.speed = speed
-        self.action_space = spaces.Discrete(3) # for now 3 actions
+        self.action_space = spaces.Discrete(5) # for now 3 actions
+        self.delta = 0.2
 
         self.action = np.array([
-            [1, speed],
-            [-1, speed],
-            [0, speed]
+            [1, self.speed],
+            [-1, self.speed],
+            [0, self.speed],
+            #[1, self.speed+self.delta],
+            #[-1, self.speed+self.delta],
+            [0, self.increase_speed()], #self.speed+self.delta],
+            #[1, self.speed-self.delta],
+            #[-1, self.speed-self.delta],
+            [0, self.decrease_speed()], #self.speed-self.delta],
         ])
         self.observation_space = spaces.Box(low=0, high=1000, shape=(27,1))
+
 
         with open(conf.wpt_path, encoding='utf-8') as f:
             self.waypoints = np.loadtxt(f, delimiter=';')
@@ -30,6 +38,14 @@ class F110Env_Discrete:
     def get_action(self, idx: int) -> np.ndarray:
         action = self.action[idx].reshape(1, -1)
         return action
+
+    def increase_speed(self):
+        self.speed += self.delta
+        return self.speed
+
+    def decrease_speed(self):
+        self.speed -= self.delta
+        return self.speed
 
     def get_obs(self, raw_obs: dict) -> np.ndarray:
         obs = raw_obs['scans'][0][::40]

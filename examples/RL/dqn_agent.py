@@ -17,6 +17,7 @@ from collections import OrderedDict
 from typing import Dict, List, Tuple
 from utils import seed_all
 
+SPEED_PARAM=3
 
 class D3QNAgent:
     def __init__(self,
@@ -60,7 +61,7 @@ class D3QNAgent:
         self.transition = list()
         self.is_test = False
 
-    def train(self, num_steps, render_interval, save_interval=100000, update_interval=-1, eval_episode=10, initial_ep=None):
+    def train(self, num_steps, render_interval, save_interval=100000, update_interval=-1, eval_episodes=10, initial_ep=None, render=True):
         self.is_test = False
         obs = self.env.reset()
         update_cnt = 0
@@ -75,6 +76,7 @@ class D3QNAgent:
         for i_step in range(initial_ep, num_steps+1):
             action = self.select_action(obs)
             obs, reward, done, info = self.env.step(action)
+            reward *= (1 + SPEED_PARAM * self.env.speed)
             score += reward
 
             if done:
@@ -103,7 +105,7 @@ class D3QNAgent:
             # save
             if i_step % save_interval == 0:
                 self.save(f'step_{i_step}')
-                cur_score = self.eval(reload_model=False, render=False)
+                cur_score = self.eval(reload_model=False, render=False, num_episodes=eval_episodes)
                 if cur_score >= best_score or cur_score >= 8: # limit is updatable
                     self.save(f'best_step_{i_step}')
                     best_score = cur_score
@@ -111,45 +113,33 @@ class D3QNAgent:
 
             # plot
             if i_step % render_interval == 0:
-                #self._plot(i_step, scores, losses, epsilons)
-                self.test(render=True)
+                self._plot(i_step, scores, losses, epsilons)
                 print('episode', len(scores), 'steps', i_step)
                 print('Score', np.mean(np.mean(scores[-10:])))
 
-            self.env.close()
+            if render:
+                self.env.render()
 
-    def eval(self, reload_model=False, render=False, model=None):
+        self.env.close()
+
+    def eval(self, reload_model=False, render=False, model=None, num_episodes=5):
         self.is_test = True
         if reload_model:
             self.load(model)
-        obs = self.env.reset()
-        done = False
-        score = 0
-        while not done:
-            obs, reward, done = self.eval_step(obs)
-            score += reward
-            if render:
-                self.env.render()
-        self.env.close()
-        return score
-
-    def test(self, render_times=5, render=False):
-        print('Testing model')
-        self.is_test = True
         scores = []
-        for i in range(render_times):
+        for i in range(num_episodes):
             obs = self.env.reset()
             done = False
             score = 0
             while not done:
-                action = self.select_action(obs)
-                obs, reward, done, _ = self.env.step(action)
+                obs, reward, done = self.eval_step(obs)
+                reward *= (1 + SPEED_PARAM * self.env.speed)
                 score += reward
                 if render:
                     self.env.render()
+            self.env.close()
             scores.append(score)
-        print('Done testing, scores are', np.round(np.array(scores), 4))
-        self.env.close()
+        return np.mean(scores)
 
     def select_action(self, obs):
         if self.epsilon > np.random.random():
@@ -163,6 +153,7 @@ class D3QNAgent:
 
     def step(self, action):
         new_obs, reward, done, _ = self.env.step(action)
+        reward *= (1 + SPEED_PARAM * self.env.speed)
         self.transition += [reward, new_obs, done]
         self.memory.store(*self.transition)
         return new_obs, reward, done
@@ -172,6 +163,7 @@ class D3QNAgent:
             torch.FloatTensor(obs).to(self.device)
         ).argmax().detach().cpu().numpy()
         new_obs, reward, done, _ = self.env.step(action)
+        reward *= (1 + SPEED_PARAM * self.env.speed)
         return new_obs, reward, done
 
     def _compute_dqn_loss(self, samples, elementwise=False):
