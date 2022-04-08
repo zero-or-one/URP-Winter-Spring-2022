@@ -106,7 +106,7 @@ if __name__ == '__main__':
             env.render()
             action_ids = [random.randint(0, 2) for i in range(env.num_agents)]
             obs, reward, done, info = env.step(action_ids)
-            #print('obs', obs)
+            print('obs', obs)
             min_obs.append(min(obs))
             print('reward', reward)
             #if i % 30 == 0:

@@ -8,3 +8,5 @@ https://github.com/f1tenth/f1tenth_gym
 
 ## Reference
 * https://github.com/JohannesBetz/F1TENTH_Reinforcement_Learning
+* https://github.com/MichaelBosello/f1tenth-RL
+

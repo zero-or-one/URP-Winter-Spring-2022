@@ -2,6 +2,10 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/car/catkin_ws/src/myahrs_driver" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/car/catkin_ws/src/ndt_omp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/car/catkin_ws/src/urg_node" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/car/catkin_ws/src/vision_opencv" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/simulation" vcs="Git" />
   </component>
 </project>

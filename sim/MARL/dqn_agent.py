@@ -208,7 +208,6 @@ class D3QNAgent:
         plt.show()
 
 
-
 class NN(nn.Module):
     def __init__(self, in_size, out_size, hid_size=128):
         super(NN, self).__init__()
